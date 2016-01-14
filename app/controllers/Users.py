@@ -11,6 +11,7 @@ from system.core.controller import *
 class Users(Controller):
     def __init__(self, action):
         super(Users, self).__init__(action)
+        self.load_model('User')
         """
             This is an example of loading a model.
             Every controller has access to the load_model method.
@@ -36,7 +37,7 @@ class Users(Controller):
         }
         user_info = self.models['User'].create_user(format_user)
         if user_info['status'] == True:
-            self.models['User'].create_user(user_info)
+            # self.models['User'].create_user(user_info)
             return redirect('/users/success')
         else:
             for message in user_info['errors']:
@@ -51,4 +52,10 @@ class Users(Controller):
         }
         user = self.models['User'].validate_user(user_info)
         if user['status'] == True:
-            session['id'] = user['id']
+            return redirect('/users/success')
+        else:
+            flash('Email or password incorrect.')
+            return redirect('/')
+
+    def success(self):
+        return self.load_view('success.html')

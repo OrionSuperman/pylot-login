@@ -9,10 +9,11 @@
 """
 from system.core.model import Model
 import re
+from flask import session
 
 class User(Model):
     def __init__(self):
-        super(WelcomeModel, self).__init__()
+        super(User, self).__init__()
 
     def create_user(self, user_info):
 
@@ -45,24 +46,27 @@ class User(Model):
             return {'status':False, 'errors':errors}
         else:
             pw_hash = self.bcrypt.generate_password_hash(user_info['password'])
-            query = "INSERT INTO users (first_name, last_name, email, pass_hash, created_at, updated_at) VALUES (%s, %s, %s, NOW(), NOW())"
-            info = [user_info['first_name'], user_info['last_name'], user_info['email'], pw_hash]
-            self.db.query_db(query, user_info)
-            id_query = "SELECT id FROM users WHERE email=%s"
-            id_email = user_info['email']
-            user=self.db.query_db(id_query, id_email)
-            session['id'] = theid[0]['id']
-            return {'status':True, 'user':user}
+            query = "INSERT INTO users (first_name, last_name, email, pass_hash, created_at, updated_at) VALUES ('{}', '{}', '{}', '{}', NOW(), NOW())".format(user_info['first_name'], user_info['last_name'], user_info['email'], pw_hash)
+            self.db.query_db(query)
+            id_query = "SELECT * FROM users WHERE email='{}' LIMIT 1".format(user_info['email'])
+            user=self.db.query_db(id_query)
+            session['id'] = user[0]['id']
+            session['first_name'] = user[0]['first_name']
+            return {'status':True, 'user':user[0]}
 
     def validate_user(self, user_info):
-        query = "SELECT * FROM users WHERE email=%s"
-        info = [user_info['email']]
-        user = self.db.query_db(query, info)
+        query = "SELECT * FROM users WHERE email='{}'".format(user_info['email'])
+        user = self.db.query_db(query)
         pass_hash = user[0]['pass_hash']
         password = user_info['password']
         if self.bcrypt.check_password_hash(pass_hash, password):
             status = True
             session['id'] = user[0]['id']
+            session['first_name'] = user[0]['first_name']
+
+            return {'status':True}
+        else:
+            return {'status':False}
 
     """
     Below is an example of a model method that queries the database for all users in a fictitious application
